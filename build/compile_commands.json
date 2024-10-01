@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/dimitri/dev/OpenGLEngine/build",
+  "command": "/usr/bin/c++  -I/home/dimitri/dev/OpenGLEngine/dependencies -g -o CMakeFiles/OpenGLEngine.dir/src/main.cpp.o -c /home/dimitri/dev/OpenGLEngine/src/main.cpp",
+  "file": "/home/dimitri/dev/OpenGLEngine/src/main.cpp",
+  "output": "CMakeFiles/OpenGLEngine.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/dimitri/dev/OpenGLEngine/build",
+  "command": "/usr/bin/cc  -I/home/dimitri/dev/OpenGLEngine/dependencies -g -o CMakeFiles/OpenGLEngine.dir/src/glad.c.o -c /home/dimitri/dev/OpenGLEngine/src/glad.c",
+  "file": "/home/dimitri/dev/OpenGLEngine/src/glad.c",
+  "output": "CMakeFiles/OpenGLEngine.dir/src/glad.c.o"
+}
+]
