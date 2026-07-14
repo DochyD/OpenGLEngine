@@ -30,19 +30,11 @@ const char *vertexShaderSource = "#version 330 core\n"
     "}\0";
 
 // Fragment Shader
-const char *fragmentShaderSourceOrange = "#version 330 core\n"
+const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
     "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n\0";
-
-// Fragment Shader
-const char *fragmentShaderSourceYellow = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n"
     "}\n\0";
 
 
@@ -108,89 +100,70 @@ int main()
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
-    // Build and compile fragment Shader orange
-    unsigned int fragmentShaderOrange = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShaderOrange, 1, &fragmentShaderSourceOrange, NULL);
-    glCompileShader(fragmentShaderOrange);
-    glGetShaderiv(fragmentShaderOrange, GL_COMPILE_STATUS, &success);
+    // Build and compile fragment Shader
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    
+    // Check for fragment shader compile errors
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(fragmentShaderOrange, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-
-    // Build and compile fragment Shader orange yellow
-    unsigned int fragmentShaderYellow = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShaderYellow, 1, &fragmentShaderSourceYellow, NULL);
-    glCompileShader(fragmentShaderYellow);
-    glGetShaderiv(fragmentShaderYellow, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShaderYellow, 512, NULL, infoLog);
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
     // Link shaders to shader program
-    unsigned int shaderProgramOrange = glCreateProgram();
-    glAttachShader(shaderProgramOrange, vertexShader);
-    glAttachShader(shaderProgramOrange, fragmentShaderOrange);
-    glLinkProgram(shaderProgramOrange);
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
     // Check for linking errors
-    glGetProgramiv(shaderProgramOrange, GL_LINK_STATUS, &success);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(shaderProgramOrange, 512, NULL, infoLog);
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
-
-    unsigned int shaderProgramYellow = glCreateProgram();
-    glAttachShader(shaderProgramYellow, vertexShader);
-    glAttachShader(shaderProgramYellow, fragmentShaderYellow);
-    glLinkProgram(shaderProgramYellow);
-    // Check for linking errors
-    glGetProgramiv(shaderProgramYellow, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgramYellow, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-
     glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShaderOrange);
-    glDeleteShader(fragmentShaderYellow);
+    glDeleteShader(fragmentShader);
 
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
-    float firstTriangle[] = {
+    float vertices[] = {
+        // first triangle
         -0.9f, -0.5f, 0.0f,  // left 
         -0.0f, -0.5f, 0.0f,  // right
         -0.45f, 0.5f, 0.0f,  // top 
+        // second triangle
+         0.0f, -0.5f, 0.0f,  // left
+         0.9f, -0.5f, 0.0f,  // right
+         0.45f, 0.5f, 0.0f   // top 
     };
-    float secondTriangle[] = {
-        0.0f, -0.5f, 0.0f,  // left
-        0.9f, -0.5f, 0.0f,  // right
-        0.45f, 0.5f, 0.0f   // top 
-    };
+
     // VBO = Vertex buffer objects | Contains raw data
     // VAO = Vertex Array objects | Knows how to interpret the raw data
-    unsigned int VBOs[2], VAOs[2];
-    glGenVertexArrays(2, VAOs); // we can also generate multiple VAOs or buffers at the same time
-    glGenBuffers(2, VBOs);
-    // first triangle setup
-    // --------------------
-    glBindVertexArray(VAOs[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(firstTriangle), firstTriangle, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);	// Vertex attributes stay the same
-    glEnableVertexAttribArray(0);
-    // glBindVertexArray(0); // no need to unbind at all as we directly bind a different VAO the next few lines
-    // second triangle setup
-    // ---------------------
-    glBindVertexArray(VAOs[1]);	// note that we bind to a different VAO now
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);	// and a different VBO
-    glBufferData(GL_ARRAY_BUFFER, sizeof(secondTriangle), secondTriangle, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); // because the vertex data is tightly packed we can also specify 0 as the vertex attribute's stride to let OpenGL figure it out
-    glEnableVertexAttribArray(0);
-    // glBindVertexArray(0); // not really necessary as well, but beware of calls that could affect VAOs while this one is bound (like binding element buffer objects, or enabling/disabling vertex attributes)
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    // Tells open gl that we will configure this VAO
+    glBindVertexArray(VAO); // 
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO); // The Current buffer is this vbo 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copy data into gpu
+
+    // Tells how the data of the binded vbo can be interpreted
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); // Activate the attribute 0
+
+    // Unbind vbo : note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    // Ex : VAO knows that : Attribut 0 > VBO number X > 3 floats > stride 12 
+    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+
+
+    // Unbind VAO You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    glBindVertexArray(0); 
 
     // uncomment this call to draw in wireframe polygons.
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -227,14 +200,9 @@ int main()
 
         
         // VBO without EBO
-        glUseProgram(shaderProgramOrange);
-        // draw first triangle using the data from the first VAO
-        glBindVertexArray(VAOs[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // then we draw the second triangle using the data from the second VAO
-        glUseProgram(shaderProgramYellow);
-        glBindVertexArray(VAOs[1]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // glBindVertexArray(0); // no need to unbind it every time 
 
@@ -242,11 +210,9 @@ int main()
     }
 
     // De-alocate ressources
-    glDeleteVertexArrays(2, VAOs);
-    glDeleteBuffers(2, VBOs);
-    glDeleteProgram(shaderProgramOrange);
-    glDeleteProgram(shaderProgramYellow);
-
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteProgram(shaderProgram);
 
     SDL_GL_DestroyContext(context);
     SDL_DestroyWindow(window);

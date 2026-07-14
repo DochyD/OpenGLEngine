@@ -24,7 +24,15 @@ target_include_directories(glad PUBLIC
 # Creates an executable from those source libraries
 add_executable(OpenGLEngine
     src/main.cpp
+    src/Application.cpp
+    src/Input.cpp
+    src/Renderer.cpp
+    src/Shader.cpp
+    src/Window.cpp
 )
+
+# Add include folder
+target_include_directories(OpenGLEngine PRIVATE include)
 
 # Tell the executable to use those libraries
 # Private means only OpenGLEngine needs those libraries
