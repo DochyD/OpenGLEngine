@@ -15,24 +15,26 @@ find_package(OpenGL REQUIRED)
 add_library(glad STATIC
     external/glad/src/glad.c
 )
+
 # Tells the compiler where the 'glad' header files are
 # GLAD will be compiled into the executable
 target_include_directories(glad PUBLIC
     external/glad/include
 )
 
+
 # Creates an executable from those source libraries
 add_executable(OpenGLEngine
     src/main.cpp
-    src/Application.cpp
-    src/Input.cpp
-    src/Renderer.cpp
     src/Shader.cpp
-    src/Window.cpp
+    src/stb_image.cpp
 )
 
 # Add include folder
-target_include_directories(OpenGLEngine PRIVATE include)
+target_include_directories(OpenGLEngine PRIVATE
+    include
+    external/stb/include
+)
 
 # Tell the executable to use those libraries
 # Private means only OpenGLEngine needs those libraries
