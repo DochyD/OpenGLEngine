@@ -34,7 +34,9 @@ add_executable(OpenGLEngine
 target_include_directories(OpenGLEngine PRIVATE
     include
     external/stb/include
+    external/glm    
 )
+
 
 # Tell the executable to use those libraries
 # Private means only OpenGLEngine needs those libraries
