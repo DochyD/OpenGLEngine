@@ -5,15 +5,26 @@
 #include <SDL3/SDL.h>
 #include <stb_image.h>
 
+#include <Camera.h>
 #include <Shader.h>
 
 #include <cmath>
 #include <iostream>
 
+// Forward declaration
+void processEvents(SDL_Window* window, bool& running);
+void processInput(SDL_Window* window, bool& running);
+
 // Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+// Camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+
+// Timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
 
 int main()
 {
@@ -28,6 +39,7 @@ int main()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
     // Create an SDL/OpenGL window
     SDL_Window* window = SDL_CreateWindow(
@@ -43,6 +55,7 @@ int main()
         SDL_Quit();
         return 1;
     }
+    SDL_SetWindowRelativeMouseMode(window, true);
 
     // Create the OpenGL context
     SDL_GLContext context = SDL_GL_CreateContext(window);
@@ -60,6 +73,7 @@ int main()
         std::cerr << "Failed to initialize GLAD\n";
         return 1;
     }
+    glEnable(GL_DEPTH_TEST);
 
     // build and compile our shader program
     // ------------------------------------
@@ -68,28 +82,69 @@ int main()
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     float vertices[] = {
-        // positions          // texture coords
-         0.5f,  0.5f, 0.0f,   1.0f, 1.0f, // top right
-         0.5f, -0.5f, 0.0f,   1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,   0.0f, 1.0f  // top left 
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
-    unsigned int indices[] = {
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
+    // world space positions of our cubes
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
     };
-    unsigned int VBO, VAO, EBO;
+    unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -156,98 +211,54 @@ int main()
     ourShader.setInt("texture1", 0);
     ourShader.setInt("texture2", 1);
 
-    float mixValue = 0.5f;
-
     bool running = true;
     while (running)
     {
-        SDL_Event event;
 
-        while (SDL_PollEvent(&event))
-        {
-            // std::cout << "Event : " << event.type << std::endl;
-            switch (event.type)
-            {
-                // Quit event
-                case SDL_EVENT_QUIT:
-                    running = false;
-                    break;
-                
-                // Resize event
-                case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-                
-                    int w, h;
-                    SDL_GetWindowSizeInPixels(window, &w, &h);
-                    glViewport(0, 0, w, h);
-                    break;
-                
-                // Key down
-                case SDL_EVENT_KEY_DOWN:
-                    if (event.key.key == SDLK_DOWN)
-                    {
-                        std::cout << "down : " << mixValue << std::endl;
-                        mixValue -= 0.1;
-                        break;
-                    }
-                    else if (event.key.key == SDLK_UP)
-                    {
-                        std::cout << "up" << mixValue << std::endl;
-                        mixValue += 0.1;
-                        break;
-                    }
-            }
-        }
+        // udpate time
+        float currentFrame = SDL_GetTicks() / 1000.0f;
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        processEvents(window, running);
+        processInput(window, running);
 
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
         // bind textures on corresponding texture units
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
+  
+        // activate shader
+        ourShader.use();
+      
+        // pass projection matrix to shader (note that in this case it could change every frame)
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        ourShader.setMat4("projection", projection);
 
-        glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-        float time = SDL_GetTicks() / 1000.0f; // Convert ms to seconds
-        // first container
-        // ---------------
-        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
-        transform = glm::rotate(transform, time, glm::vec3(0.0f, 0.0f, 1.0f));
-        // get their uniform location and set matrix (using glm::value_ptr)
-        unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+        // camera/view transformation
+        glm::mat4 view = camera.GetViewMatrix();
+        ourShader.setMat4("view", view);
 
-        // with the uniform matrix set, draw the first container
+        // render boxes
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            ourShader.setMat4("model", model);
 
-        // second transformation
-        // ---------------------
-        transform = glm::mat4(1.0f); // reset it to identity matrix
-        transform = glm::translate(transform, glm::vec3(-0.5f, 0.5f, 0.0f));
-        float scaleAmount = static_cast<float>(sin(time));
-        transform = glm::scale(transform, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform[0][0]); // this time take the matrix value array's first element as its memory pointer value
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
-        // now with the uniform matrix being replaced with new transformations, draw it again.
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        // // create transformations
-        // float time = SDL_GetTicks() / 1000.0f; // Convert ms to seconds
-        // glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-        // transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
-        // transform = glm::rotate(transform, (float)time, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        // // get matrix's uniform location and set matrix
-        // ourShader.use();
-        // unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
-        // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
-
-        // // render container
-        // glBindVertexArray(VAO);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         SDL_GL_SwapWindow(window);
     }
@@ -256,11 +267,64 @@ int main()
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
 
     SDL_GL_DestroyContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
     return 0;
+}
+
+void processEvents(SDL_Window* window, bool &running)
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+            case SDL_EVENT_QUIT:
+                running = false;
+                break;
+
+            case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+            {
+                int w, h;
+                SDL_GetWindowSizeInPixels(window, &w, &h);
+                glViewport(0, 0, w, h);
+                break;
+            }
+
+            case SDL_EVENT_MOUSE_MOTION:
+            {
+                float xoffset = event.motion.xrel;
+                float yoffset = -event.motion.yrel; // reversed since y-coordinates go from bottom to top
+                camera.ProcessMouseMovement(xoffset, yoffset);
+                break;
+            }
+            case SDL_EVENT_MOUSE_WHEEL:
+            {
+                camera.ProcessMouseScroll(event.wheel.y);
+                break;
+            }
+        }
+    }
+}
+
+void processInput(SDL_Window* window, bool &running)
+{
+    const bool* state = SDL_GetKeyboardState(nullptr);
+
+    // Global
+    if (state[SDL_SCANCODE_ESCAPE])
+        running = false;
+
+    // Camera
+    if (state[SDL_SCANCODE_W])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (state[SDL_SCANCODE_S])
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (state[SDL_SCANCODE_A])
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (state[SDL_SCANCODE_D])
+        camera.ProcessKeyboard(RIGHT, deltaTime);
 }

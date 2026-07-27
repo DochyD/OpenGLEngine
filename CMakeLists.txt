@@ -26,6 +26,7 @@ target_include_directories(glad PUBLIC
 # Creates an executable from those source libraries
 add_executable(OpenGLEngine
     src/main.cpp
+    src/Camera.cpp
     src/Shader.cpp
     src/stb_image.cpp
 )
