@@ -1,0 +1,18 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+
+IncludeCategories:
+  - Regex:           '^<(SDL3)/'
+    Priority:        1
+  - Regex:           '^<(glad)/'
+    Priority:        2
+  - Regex:           '^<(glm)/'
+    Priority:        3
+  - Regex:           '^<[a-z_]+>'    # standard library headers, e.g. <vector>, <string>
+    Priority:        4
+  - Regex:           '.*'
+    Priority:        5

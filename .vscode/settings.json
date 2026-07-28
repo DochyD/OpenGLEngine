@@ -1,0 +1,12 @@
+{
+    // Disable IntelliSense to avoid conflicts with clangd
+    "C_Cpp.intelliSenseEngine": "disabled",
+    // Clang parameters
+    "clangd.path": "D:/dev/softs/msys64/ucrt64/bin/clangd.exe",
+    // Editor settings
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+    },
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true
+}

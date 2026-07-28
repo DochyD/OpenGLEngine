@@ -4,7 +4,7 @@ Dev process:
 
 ```
 cd /d/dev/repos/OpenGLEngine
-cmake -B build -G Ninja
+cmake -B build -G Ninja -DCMAKE_C_COMPILER=D:/dev/softs/msys64/ucrt64/bin/gcc.exe -DCMAKE_CXX_COMPILER=D:/dev/softs/msys64/ucrt64/bin/g++.exe
 cmake --build build
 ./build/OpenGLEngine.exe
 ```

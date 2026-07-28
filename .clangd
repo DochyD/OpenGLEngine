@@ -1,0 +1,12 @@
+CompileFlags:
+  Compiler: D:/dev/softs/msys64/ucrt64/bin/g++.exe
+  CompilationDatabase: build
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - modernize*
+      - performance*
+      - readability*
+    Remove:
+      - modernize-use-trailing-return-type
