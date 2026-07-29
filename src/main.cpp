@@ -178,6 +178,8 @@ int main() {
         glBindVertexArray(lightCubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        // Add another cube with a different color please lama :
+
         SDL_GL_SwapWindow(window);
     }
 

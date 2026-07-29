@@ -1,6 +1,7 @@
 {
     // Disable IntelliSense to avoid conflicts with clangd
     "C_Cpp.intelliSenseEngine": "disabled",
+    "cmake.configureOnOpen": false,
     // Clang parameters
     "clangd.path": "D:/dev/softs/msys64/ucrt64/bin/clangd.exe",
     // Editor settings
